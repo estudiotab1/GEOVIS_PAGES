@@ -3,269 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modelación Hidráulica HEC-RAS | Tabasco</title>
-    <meta name="description" content="Resultados de modelación hidráulica bidimensional en HEC-RAS para la cuenca Grijalva-Usumacinta, Tabasco.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>Geovisor Tabasco</title>
+    <meta name="description" content="Geovisor interactivo con capas GeoJSON de Tabasco">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="legend.css">
 </head>
 <body>
+<div class="app-container">
 
-    <!-- ── NAVBAR ── -->
-    <nav class="navbar">
-        <div class="brand">
-            <div class="brand-icon"><i class="fa-solid fa-water"></i></div>
-            <div class="brand-text">
-                <span class="brand-title">HEC-RAS TABASCO</span>
-                <span class="brand-sub">Modelación Hidráulica 2D</span>
+    <!-- ═══ SIDEBAR IZQUIERDO ═══ -->
+    <aside class="sidebar-left" id="sidebar-left">
+        <button id="sidebar-toggle" class="sidebar-toggle" title="Ocultar/Mostrar panel">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+
+        <div class="sidebar-header">
+            <h2>Geovisor Tabasco</h2>
+            <div class="view-switcher">
+                <button id="view-map-btn" class="view-btn active">
+                    <i class="fas fa-map"></i> Mapa
+                </button>
+                <button id="view-dash-btn" class="view-btn">
+                    <i class="fas fa-chart-pie"></i> Dashboard
+                </button>
             </div>
         </div>
-        <ul class="nav-links">
-            <li><a href="#contexto">Contexto</a></li>
-            <li><a href="#objetivos">Objetivos</a></li>
-            <li><a href="#metodologia">Metodología</a></li>
-            <li><a href="#mapas">Mapas</a></li>
-            <li><a href="../index.html" target="_blank" class="nav-highlight">Visor SIG <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.7rem;"></i></a></li>
-        </ul>
-    </nav>
 
-    <!-- ── HERO ── -->
-    <header class="hero" id="inicio">
-        <div class="hero-content">
-            <div class="hero-tag"><span class="dot"></span> ANÁLISIS HIDRÁULICO AVANZADO</div>
-            <h1>Modelación de Inundaciones<br><span>Tabasco, México</span></h1>
-            <p>
-                Simulación bidimensional de flujo libre para la planificación integral del riesgo de inundación en la cuenca Grijalva-Usumacinta mediante HEC-RAS 2D.
-            </p>
-            <div class="hero-cta">
-                <a href="#metodologia" class="btn-cta">Explorar proyecto</a>
-                <a href="#mapas" class="btn-ghost">Ver resultados cartográficos</a>
-            </div>
-        </div>
-        <div class="hero-visual">
-            <div class="hex-grid">
-                <div class="hex h1"></div>
-                <div class="hex h2"></div>
-                <div class="hex h3"></div>
-                <div class="hex h4"></div>
-                <div class="hex h5"></div>
-                <div class="hex h6"></div>
-            </div>
-        </div>
-    </header>
+        <!-- Las capas se insertan dinámicamente por app.js -->
+        <div class="accordion-menu" id="layer-list"></div>
+    </aside>
 
-    <!-- ── CONTEXTO ── -->
-    <section id="contexto" class="section">
-        <div class="container">
-            <div class="section-label"><span>01 /</span> Contexto</div>
-            <div class="context-grid">
-                <div class="context-main">
-                    <h2>Una de las cuencas más propensas a inundaciones de México</h2>
-                    <p>La cuenca Grijalva-Usumacinta concentra el 30 % del escurrimiento superficial del país. Tabasco, ubicado en su parte baja, enfrenta inundaciones recurrentes que afectan a cientos de miles de habitantes. Este proyecto aplica modelación hidráulica de alta resolución para cuantificar tirantes, velocidades y manchas de inundación bajo distintos escenarios hidrológicos.</p>
+    <!-- ═══ ÁREA PRINCIPAL ═══ -->
+    <main class="main-content">
+
+        <!-- ─── VISTA MAPA ─── -->
+        <div id="map-view" class="view-panel">
+            <div id="map"></div>
+
+            <div id="dash-filter-badge" class="hidden">
+                <span>Filtro: <b id="dash-filter-text"></b></span>
+                <button id="dash-filter-clear" title="Borrar filtro"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- Leyenda discreta -->
+            <div id="map-legend" class="map-legend hidden">
+                <div class="legend-header">
+                    <span id="legend-title"></span>
+                    <button id="legend-close" title="Cerrar leyenda"><i class="fas fa-times"></i></button>
                 </div>
-                <div class="context-stats">
-                    <div class="stat-card">
-                        <div class="stat-value">16</div>
-                        <div class="stat-label">Subcuencas prioritarias</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">5m</div>
-                        <div class="stat-label">Resolución MDE INEGI</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">HEC-RAS</div>
-                        <div class="stat-label">Modelación hidráulica</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">Tr 2-100</div>
-                        <div class="stat-label">Años (Período de retorno)</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">108</div>
-                        <div class="stat-label">Modelaciones realizadas</div>
-                    </div>
-                </div>
+                <div id="legend-field" class="legend-field"></div>
+                <div id="legend-items" class="legend-items"></div>
             </div>
-        </div>
-    </section>
 
-    <!-- ── OBJETIVO DEL ESTUDIO ── -->
-    <section id="objetivos" class="section alt-section">
-        <div class="container">
-            <div class="section-label"><span>02 /</span> Objetivo del estudio</div>
-            <div class="objectives-layout">
-                <div class="objectives-heading">
-                    <h2>¿Qué busca<br>este estudio?</h2>
-                    <p>Un conjunto de objetivos operativos orienta la modelación hacia resultados de utilidad directa para la gestión del riesgo de inundación en Tabasco.</p>
-                </div>
-                <ul class="objectives-list">
-                    <li>
-                        <div class="obj-icon"><i class="fa-solid fa-water"></i></div>
-                        <div class="obj-text">Simular el comportamiento hidrológico ante eventos de lluvia en <strong>16 subcuencas prioritarias</strong> y <strong>8 subcuencas no prioritarias</strong></div>
-                    </li>
-                    <li>
-                        <div class="obj-icon"><i class="fa-solid fa-arrows-to-dot"></i></div>
-                        <div class="obj-text">Identificar <strong>zonas de acumulación</strong> y flujo superficial</div>
-                    </li>
-                    <li>
-                        <div class="obj-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                        <div class="obj-text">Priorizar subcuencas con <strong>mayor riesgo de inundación</strong></div>
-                    </li>
-                    <li>
-                        <div class="obj-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                        <div class="obj-text">Identificar zonas de inundación en <strong>diferentes tiempos de retorno</strong></div>
-                    </li>
-                    <li>
-                        <div class="obj-icon"><i class="fa-solid fa-map"></i></div>
-                        <div class="obj-text">Generar resultados que apoyen la <strong>planeación territorial</strong> y la gestión integral de riesgo en Tabasco</div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </section>
+            <!-- Paneles flotantes derechos -->
+            <div class="right-panels">
 
-    <!-- ── METODOLOGÍA ── -->
-    <section id="metodologia" class="section">
-        <div class="container">
-            <div class="section-label"><span>03 /</span> Metodología</div>
-            <!-- Introducción y PDF -->
-            <div class="metodo-intro">
-                <div class="metodo-text">
-                    <h2 class="metodo-title">Metodología de<br><strong>Modelación</strong></h2>
-                    <p>Nuestro enfoque técnico integra modelos hidrológicos e hidráulicos mediante software especializado HEC-RAS. El proceso incluye:</p>
-                    <ul class="metodo-bullets" style="margin-top: 0.5rem; padding-left: 1.2rem; color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <li>Elaboración de memorias de cálculo para establecer condiciones de entrada y salida en cada subcuenca.</li>
-                        <li>Ingreso de precipitación registrada como condición de entrada en base a isoyetas de tiempos de retorno.</li>
-                        <li>Construcción de modelos hidráulicos a partir de las áreas de cada subcuenca con su MDE.</li>
-                        <li>Simulación de eventos de crecidas para períodos de retorno de 2, 5, 10, 20 y 100 años.</li>
-                        <li>Desarrollo de una metodología para identificar zonas de riesgo e inundación mediante profundidades y velocidades de flujo.</li>
-                        <li>Generación de mapas de peligrosidad para cada subcuenca.</li>
-                        <li>Obtención de parámetros hidráulicos (tirante, velocidad) para diseño de obras de mitigación.</li>
-                    </ul>
-                </div>
-                <div class="metodo-doc">
-                    <div class="doc-card">
-                        <div class="doc-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                        <div class="doc-info">
-                            <span class="doc-type">Documento técnico completo</span>
-                            <span class="doc-title">Metodología de modelación hidráulica HEC-RAS Tabasco</span>
-                        </div>
-                        <button class="btn-doc" id="btn-open-pdf" onclick="openPDF()">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver documento
+                <!-- Panel: Capas activas -->
+                <div class="panel top-panel" id="panel-layers">
+                    <i class="fas fa-layer-group panel-icon-min" title="Expandir capas"></i>
+                    <div class="panel-header-controls">
+                        <button class="minimize-btn" title="Minimizar panel">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                    <h3>Capas activas</h3>
+                    <div class="badge-mini" id="active-count" style="margin-bottom:12px;">0 Capas</div>
+
+                    <div id="active-layer-list"></div>
+
+                    <div class="basemap-select-container">
+                        <select class="basemap-select" id="basemap-select">
+                            <option value="light" selected>Mapa claro (Carto)</option>
+                            <option value="dark">Mapa nocturno (Carto)</option>
+                            <option value="satellite">Satélite (Google)</option>
+                            <option value="hybrid">Híbrido (Google)</option>
+                            <option value="terrain">Relieve (Topo)</option>
+                        </select>
+                    </div>
+
+                    <div class="panel-actions">
+                        <button class="btn-primary" id="classify-btn">
+                            Clasificar capa <i class="fas fa-palette"></i>
+                        </button>
+                        <button class="btn-secondary" id="download-btn">
+                            Descargar capa <i class="fas fa-download"></i>
                         </button>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
-    <section id="mapas" class="section">
-        <div class="container">
-            <div class="section-label"><span>04 /</span> Cartografía de resultados</div>
-            <div class="section-head">
-                <h2>Mapas de Inundación (PDF)</h2>
-                <p>Explora los mapas de inundación generados para distintos periodos de retorno.</p>
-            </div>
-            
-            <div class="pdf-viewer" id="map-view-container">
-                <div class="pdf-header">
-                    <span class="pdf-title"><i class="fa-solid fa-map"></i> Mapas de Inundación</span>
-                    <div class="map-controls">
-                        <button class="map-btn active" data-src="https://raw.githubusercontent.com/estudiotab1/GEOVISOR/main/TR_2_compressed_page-0001.jpg">TR 2</button>
-                        <button class="map-btn" data-src="https://raw.githubusercontent.com/estudiotab1/GEOVISOR/main/TR_5_compressed%20(1)_page-0001.jpg">TR 5</button>
-                        <button class="map-btn" data-src="https://raw.githubusercontent.com/estudiotab1/GEOVISOR/main/TR_10_compressed_page-0001.jpg">TR 10</button>
-                        <button class="map-btn" data-src="https://raw.githubusercontent.com/estudiotab1/GEOVISOR/main/TR_20_compressed_page-0001.jpg">TR 20</button>
-                        <button class="map-btn" data-src="https://raw.githubusercontent.com/estudiotab1/GEOVISOR/main/TR_100_compressed_page-0001.jpg">TR 100</button>
-                    </div>
-                </div>
-                <div class="map-image-container">
-                    <img id="main-map-img" src="https://raw.githubusercontent.com/estudiotab1/GEOVISOR/main/TR_2_compressed_page-0001.jpg" alt="Mapa de inundación" style="width: 100%; height: 700px; object-fit: contain; background: #fff;" />
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- ── VISOR SIG ── -->
-    <section id="visor" class="section alt-section">
-        <div class="container">
-            <div class="section-label"><span>05 /</span> Visor SIG</div>
-            <div class="visor-access-card">
-                <div class="visor-access-left">
-                    <div class="visor-access-icon"><i class="fa-solid fa-map-location-dot"></i></div>
-                    <div>
-                        <h3>Explorador cartográfico interactivo</h3>
-                        <p>Visualización dinámica de capas derivadas del modelo: tirantes, velocidades y mancha de inundación. Los insumos se integrarán conforme avance la generación de resultados.</p>
-                        <div class="visor-tags">
-                            <span class="vtag">Leaflet</span>
-                            <span class="vtag">HEC-RAS 2D</span>
+                <!-- Panel: Área de Influencia (Búfer) -->
+                <div class="panel info-panel minimized" id="panel-buffer">
+                    <i class="fas fa-circle-dot panel-icon-min" title="Área de influencia (Búfer)"></i>
+                    <div class="panel-header-controls">
+                        <button class="minimize-btn" title="Minimizar panel">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                    <h3>Área de Influencia</h3>
+                    <div style="width:100%; margin-top:10px;">
+                        <button id="buffer-activate-btn" class="cl-btn-apply" style="width:100%; margin-bottom:10px; padding:6px; font-size:12px; background:var(--accent); border:none; border-radius:4px; color:#fff; cursor:pointer;"><i class="fas fa-crosshairs"></i> Activar marcador</button>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <label style="font-size:12px; color:#9ca3af;">Radio (metros):</label>
+                            <input type="number" id="buffer-radius" value="1500" min="100" max="20000" step="100" class="basemap-select" style="width:80px; margin:0; padding:4px;">
+                        </div>
+                        <div id="buffer-results" style="font-size:11px; color:#e2e8f0; display:none; margin-top:12px;">
+                            <h4 style="margin:5px 0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:3px; font-size:11px;">Elementos en radio:</h4>
+                            <ul id="buffer-results-list" style="list-style:none; padding:0; margin:5px 0; display:flex; flex-direction:column; gap:4px;">
+                                <!-- Insertados dinámicamente -->
+                            </ul>
+                            <button id="buffer-clear-btn" class="cl-btn-ghost" style="width:100%; margin-top:10px; padding:4px; font-size:11px; border:1px dashed rgba(255,255,255,0.2); background:transparent; color:#9ca3af; cursor:pointer;"><i class="fas fa-trash-can"></i> Limpiar</button>
                         </div>
                     </div>
                 </div>
-                <a href="../index.html" target="_blank" class="btn-visor-open">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir visor
-                </a>
-            </div>
-        </div>
-    </section>
 
-    <!-- ── LIGHTBOX para mapas ── -->
-    <div id="lightbox" class="lightbox hidden">
-        <button id="lb-close" class="lb-close"><i class="fa-solid fa-xmark"></i></button>
-        <div class="lb-content">
-            <img id="lb-img" src="" alt="">
-            <div id="lb-caption" class="lb-caption"></div>
-        </div>
-    </div>
-
-    <!-- ── MODAL PDF ── -->
-    <div id="pdf-modal" class="pdf-modal hidden">
-        <div class="pdf-wrapper">
-            <div class="pdf-modal-header">
-                <span><i class="fa-solid fa-file-pdf"></i> Metodología — HEC-RAS Tabasco</span>
-                <button onclick="closePDF()" class="pdf-close-btn"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <iframe id="pdf-frame" src="" class="pdf-frame"></iframe>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <!-- ── CHATBOT MAPITA ── -->
-    <div id="chatbot-widget" class="chatbot-widget">
-        <!-- Floating Button -->
-        <div class="chatbot-ping"></div>
-        <button id="chatbot-toggle" class="chatbot-toggle" aria-label="Abrir chat">
-            <img src="https://raw.githubusercontent.com/estudiotab1/GEOVISOR/main/23bbb062-d036-486d-af6c-b1514ca74653.png" alt="Mapita" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />
-        </button>
-
-        <!-- Chat Window -->
-        <div id="chatbot-window" class="chatbot-window hidden">
-            <div class="chatbot-header">
-                <div class="chatbot-title">
-                    <div class="chatbot-avatar">
-                        <img src="https://raw.githubusercontent.com/estudiotab1/GEOVISOR/main/23bbb062-d036-486d-af6c-b1514ca74653.png" alt="Mapita" />
-                        <span class="chatbot-online-dot"></span>
+                <!-- Panel: Tabla de atributos -->
+                <div class="panel info-panel" id="panel-info">
+                    <i class="fas fa-table panel-icon-min" title="Tabla de atributos"></i>
+                    <div class="panel-header-controls">
+                        <button class="minimize-btn" title="Minimizar panel">
+                            <i class="fas fa-minus"></i>
+                        </button>
                     </div>
-                    <div class="chatbot-title-info">
-                        <span class="chatbot-name">🌎 Mapita</span>
-                        <span class="chatbot-status">En línea · Asistente técnico</span>
+
+                    <div class="info-header">
+                        <h4><i class="fas fa-table" style="color:var(--accent);margin-right:6px;"></i>Tabla de atributos</h4>
+                        <select id="attr-layer-select" class="basemap-select" style="margin-top:10px;">
+                            <option value="">— Selecciona una capa —</option>
+                        </select>
+                        <p id="attr-feature-count" class="attr-count"></p>
+                    </div>
+
+                    <div class="attr-table-wrapper" id="attr-table-wrapper">
+                        <p class="no-layers-msg" style="margin-top:12px;">
+                            Activa una capa para ver sus atributos.
+                        </p>
                     </div>
                 </div>
-                <button id="chatbot-close" class="chatbot-close"><i class="fa-solid fa-xmark"></i></button>
+
+            </div><!-- /right-panels -->
+        </div><!-- /map-view -->
+
+        <!-- ─── VISTA DASHBOARD ─── -->
+        <div id="dashboard-view" class="view-panel" style="display:none;">
+            <div class="dashboard-scroll">
+                <div class="dashboard-header">
+                    <h2><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:12px;"></i>Panel de Análisis</h2>
+                    <p>Estadísticas calculadas a partir de las capas activas en el mapa</p>
+                </div>
+
+                <!-- KPIs -->
+                <div class="dash-kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fas fa-layer-group"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-value" id="kpi-layers">0</span>
+                            <span class="kpi-label">Capas Activas</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background:rgba(78,205,196,0.15);"><i class="fas fa-map-marker-alt" style="color:#4ECDC4;"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-value" id="kpi-features">0</span>
+                            <span class="kpi-label">Total Elementos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficas -->
+                <div class="dash-charts-grid">
+                    <!-- Análisis Variable (Dinámico) -->
+                    <div class="chart-card" style="grid-column: span 2;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
+                            <h3 style="margin-bottom:0;"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px;"></i>Análisis de Variables</h3>
+                            <div style="display:flex; gap:10px;">
+                                <div class="dash-toolbar">
+                                    <button class="dash-chart-type-btn active" data-type="bar" title="Gráfico de barras"><i class="fas fa-chart-bar"></i></button>
+                                    <button class="dash-chart-type-btn" data-type="doughnut" title="Gráfico de dona"><i class="fas fa-chart-pie"></i></button>
+                                    <button class="dash-chart-type-btn" data-type="horizontalBar" title="Barras horizontales"><i class="fas fa-arrows-alt-h"></i></button>
+                                    <div style="width:1px; background:var(--border-color); margin:0 5px;"></div>
+                                    <button class="dash-export-btn" id="btn-export-png" title="Descargar PNG"><i class="fas fa-image"></i></button>
+                                    <button class="dash-export-btn" id="btn-export-csv" title="Descargar CSV"><i class="fas fa-file-csv"></i></button>
+                                </div>
+                                <select id="dash-var-layer" class="basemap-select" style="width:180px; margin:0;">
+                                    <option value="">- Seleccionar Capa -</option>
+                                </select>
+                                <select id="dash-var-field" class="basemap-select" style="width:180px; margin:0;">
+                                    <option value="">- Variable principal -</option>
+                                </select>
+                                <select id="dash-var-field-2" class="basemap-select" style="width:180px; margin:0;">
+                                    <option value="">- Comparar con (Opcional) -</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-wrap" style="height:320px;">
+                            <canvas id="chart-variable"></canvas>
+                        </div>
+                        <div id="dash-stats-row" class="dash-stats-row hidden">
+                            <div class="stat-mini-card"><div class="stat-title">Suma</div><div class="stat-val" id="stat-sum">0</div></div>
+                            <div class="stat-mini-card"><div class="stat-title">Promedio</div><div class="stat-val" id="stat-avg">0</div></div>
+                            <div class="stat-mini-card"><div class="stat-title">Máximo</div><div class="stat-val" id="stat-max">0</div></div>
+                            <div class="stat-mini-card"><div class="stat-title">Mínimo</div><div class="stat-val" id="stat-min">0</div></div>
+                        </div>
+                        <p id="dash-empty-var" class="dash-empty show">Activa capas en el Mapa y selecciona una variable para iniciar el análisis.</p>
+                    </div>
+
+                    <!-- Elementos por Capa -->
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-pie" style="color:var(--accent);margin-right:8px;"></i>Elementos por Capa</h3>
+                        <div class="chart-wrap" style="height:320px;">
+                            <canvas id="chart-capas"></canvas>
+                        </div>
+                        <p id="dash-empty-cap" class="dash-empty">Activa capas en el Mapa para ver datos.</p>
+                    </div>
+                </div>
+
+                <!-- Selector de capa para tabla en dashboard -->
+                <div class="chart-card" style="margin-top:30px;">
+                    <h3><i class="fas fa-table" style="color:var(--accent);margin-right:8px;"></i>Detalle de Atributos</h3>
+                    <select id="dash-layer-select" class="basemap-select" style="margin-bottom:15px;">
+                        <option value="">— Selecciona una capa —</option>
+                    </select>
+                    <div id="dash-attr-wrapper" class="attr-table-wrapper">
+                        <p class="no-layers-msg">Selecciona una capa para ver su tabla de atributos.</p>
+                    </div>
+                </div>
             </div>
-            
-            <div id="chatbot-messages" class="chatbot-messages">
-                <!-- Messages will be injected here via JS -->
+        </div><!-- /dashboard-view -->
+
+
+
+    </main><!-- /main-content -->
+
+</div><!-- /app-container -->
+
+<!-- ═══ MODAL DE CLASIFICACIÓN ═══ -->
+<div id="classify-modal" class="classify-modal hidden" role="dialog" aria-modal="true">
+    <div class="classify-card">
+        <div class="classify-header">
+            <span><i class="fas fa-palette" style="color:var(--accent);margin-right:8px;"></i>Clasificar capa</span>
+            <button id="classify-close" class="classify-close"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="classify-body">
+            <div class="classify-row">
+                <label class="cl-label">Capa activa</label>
+                <select id="cl-layer" class="cl-select"><option value="">— Seleccionar —</option></select>
             </div>
-            
-            <div class="chatbot-input-area">
-                <input type="text" id="chatbot-input" placeholder="💬  Pregúntame algo..." autocomplete="off">
-                <button id="chatbot-send" aria-label="Enviar"><i class="fa-solid fa-paper-plane"></i></button>
+            <div class="classify-row">
+                <label class="cl-label">Campo a clasificar</label>
+                <select id="cl-field" class="cl-select"><option value="">— Seleccionar campo —</option></select>
             </div>
+            <div class="classify-row">
+                <label class="cl-label">Método</label>
+                <div class="cl-radio-group">
+                    <label class="cl-radio">
+                        <input type="radio" name="cl-method" value="unique" checked>
+                        <span>Valores únicos</span>
+                    </label>
+                    <label class="cl-radio">
+                        <input type="radio" name="cl-method" value="graduated">
+                        <span>Gradual (coropleta)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="classify-row">
+                <label class="cl-label">Rampa de color</label>
+                <div id="cl-ramp-picker" class="cl-ramp-picker"></div>
+            </div>
+            <div id="cl-graduated-opts" class="classify-row hidden">
+                <label class="cl-label">Número de clases</label>
+                <div class="cl-classes-btns" id="cl-classes">
+                    <button class="cl-class-btn" data-n="2">2</button>
+                    <button class="cl-class-btn" data-n="3">3</button>
+                    <button class="cl-class-btn" data-n="4">4</button>
+                    <button class="cl-class-btn active" data-n="5">5</button>
+                    <button class="cl-class-btn" data-n="7">7</button>
+                    <button class="cl-class-btn" data-n="9">9</button>
+                </div>
+                <label class="cl-label" style="margin-top:12px;">Intervalo</label>
+                <div class="cl-radio-group">
+                    <label class="cl-radio">
+                        <input type="radio" name="cl-interval" value="quantile" checked>
+                        <span>Cuantil</span>
+                    </label>
+                    <label class="cl-radio">
+                        <input type="radio" name="cl-interval" value="equal">
+                        <span>Intervalo igual</span>
+                    </label>
+                    <label class="cl-radio">
+                        <input type="radio" name="cl-interval" value="jenks">
+                        <span>Jenks</span>
+                    </label>
+                </div>
+            </div>
+            <div id="cl-legend" class="cl-legend"></div>
+        </div>
+
+        <div class="classify-footer">
+            <button id="cl-reset-btn" class="cl-btn-ghost"><i class="fas fa-undo"></i> Restaurar</button>
+            <button id="cl-apply-btn" class="cl-btn-apply"><i class="fas fa-check"></i> Aplicar</button>
         </div>
     </div>
+</div>
 
-    <script src="app.js"></script>
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+<script src="https://unpkg.com/simple-statistics@7.8.3/dist/simple-statistics.min.js"></script>
+<script src="https://unpkg.com/flatgeobuf@3.29.0/dist/flatgeobuf-geojson.min.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
